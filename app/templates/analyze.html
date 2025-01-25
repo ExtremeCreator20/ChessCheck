@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <title>Analysis Results</title>
+    <style>
+        .container {
+            display: flex;
+        }
+        .evaluation-bar {
+            flex: 1;
+            margin-right: 20px;
+        }
+        .chess-board {
+            flex: 2;
+            margin-right: 20px;
+        }
+        .move-menu {
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="evaluation-bar">
+            <h2>Evaluation</h2>
+            <p>{{ evaluation }}</p>
+        </div>
+        <div class="chess-board">
+            <h2>Current Position</h2>
+            <div id="board"></div>
+        </div>
+        <div class="move-menu">
+            <h2>Moves</h2>
+            <ul>
+                {% for move, fen in moves %}
+                <li><a href="#" onclick="loadPosition('{{ fen }}')">{{ move }}</a></li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chessboard.js/1.0.0/chessboard-1.0.0.min.js"></script>
+    <script>
+        var board = Chessboard('board', {
+            position: '{{ current_position }}'
+        });
+
+        function loadPosition(fen) {
+            fetch(`/position/${fen}`)
+                .then(response => response.json())
+                .then(data => {
+                    board.position(data.position);
+                    document.querySelector('.evaluation-bar p').innerText = data.evaluation;
+                });
+        }
+    </script>
+</body>
+</html>
