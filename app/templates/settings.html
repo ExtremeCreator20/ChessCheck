@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="shortcut icon" href="{{url_for('static', filename='favicon.ico')}}" type="image/x-icon">
+    <link rel="stylesheet" href="{{url_for('static', filename='styles.css')}}">
+    <title>Settings</title>
+</head>
+<body>
+    <h1>Settings</h1>
+    {% for setting, value in settings.items() %}
+        <form method="post" action="/settings/change/{{setting}}">
+                <div>
+                    <label for="{{ setting }}">{{ setting }}</label>
+                    <input type="text" id="{{ setting }}" name="value" value="{{ value }}">
+                    <button type="submit">Change</button>
+                </div>
+        </form>
+    {% endfor %}
+</body>
+</html>

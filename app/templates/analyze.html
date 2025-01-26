@@ -1,61 +1,182 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="shortcut icon" href="{{url_for('static', filename='favicon.ico')}}" type="image/x-icon">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    <title>Analysis Results</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.css" integrity="sha512-KRrFrm+GAPOl6xxootmuQHKDoGiR2Gtifqd6XFUH++sluyhWui3vJCkmt0FN0k/H9TQn0f4sZFltC+XnQAKKvQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <title>Chess Analysis</title>
     <style>
         .container {
             display: flex;
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
+
         .evaluation-bar {
             flex: 1;
-            margin-right: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: left;
+            position: relative;
+            background: #3de346;
+            width: 50px;
         }
+
+        .evaluation-bar-inner {
+            height: 100%;
+            width: 50%;
+            position: absolute;
+            background: linear-gradient(to top, black 50%, white 50%);
+            transition: height 0.3s;
+        }
+
         .chess-board {
             flex: 2;
-            margin-right: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
+
+        #board {
+            width: 400px;
+            height: 400px;
+        }
+
         .move-menu {
             flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #3de346;
+        }
+
+        .move-menu ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .move-menu li {
+            margin-bottom: 10px;
+        }
+
+        .move-menu a {
+            text-decoration: none;
+            color: #007bff;
+            cursor: pointer;
+        }
+
+        .flip-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #5cb85c;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .flip-button:hover {
+            background-color: #4cae4c;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="evaluation-bar">
-            <h2>Evaluation</h2>
-            <p>{{ evaluation }}</p>
+            <div class="evaluation-bar-inner" id="evalBar" style="height: 100%; width: 50px;"></div>
+            <div id="evalScore" style="position: absolute; right: 10px; font-size: 1.2rem; font-weight: bold; color: black;">
+                +0.0
+            </div>
         </div>
+
         <div class="chess-board">
-            <h2>Current Position</h2>
             <div id="board"></div>
+            <button class="flip-button" onclick="flipBoard()"><img src="{{url_for('static', filename='rtarrow.png')}}"></i></button>
         </div>
+
         <div class="move-menu">
             <h2>Moves</h2>
             <ul>
-                {% for move, fen in moves %}
-                <li><a href="#" onclick="loadPosition('{{ fen }}')">{{ move }}</a></li>
+                {% for i in range(0, moves|length, 2) %}
+                    <li>
+                        <a href="#" onclick="loadPosition('{{ moves[i][1] }}')">{{ moves[i][0] }}</a>
+                        {% if i + 1 < moves|length %}
+                            - <a href="#" onclick="loadPosition('{{ moves[i+1][1] }}')">{{ moves[i+1][0] }}</a>
+                        {% endif %}
+                    </li>
                 {% endfor %}
             </ul>
         </div>
+        <div class="player-info">
+            <h2>Players</h2>
+            <p>White: {{ white_title }} {{ white_player }}</p>
+            <p>Black: {{ black_title }} {{ black_player }}</p>
+        </div>
     </div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/chessboard.js/1.0.0/chessboard-1.0.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.js" integrity="sha512-n/4gHW3atM3QqRcbCn6ewmpxcLAHGaDjpEBu4xZd47N0W2oQ+6q7oc3PXstrJYXcbNU1OHdQ1T7pAP+gi5Yu8g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.13.4/chess.js" integrity="sha512-40VRp1+fauX7g61ZdQpOiOJTkBbYwVlTLjCXHK9Svf0Mmz9K8Smg5k6LVrc0eEc9+pApf1HNL6Cim/wFqZeRkw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.js" integrity="sha512-TGU/O51undmqzEuGui6G+td333I3Wufy17Foi8O5TUc4z9rSJg+IpGmRCnLl5s0MUycrdj7vpD6YMsbRppVVzw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script>
         var board = Chessboard('board', {
-            position: '{{ current_position }}'
+            position: '{{ position }}',
+            pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png'
         });
 
         function loadPosition(fen) {
+            fen = encodeURIComponent(fen);
             fetch(`/position/${fen}`)
-                .then(response => response.json())
-                .then(data => {
-                    board.position(data.position);
-                    document.querySelector('.evaluation-bar p').innerText = data.evaluation;
-                });
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.error) {
+                    console.error("Error from server:", data.error);
+                    alert("Error loading position: " + data.error);
+                    return;
+                }
+
+                board.position(data.position);
+
+                const evalBar = document.getElementById('evalBar');
+                const evalScore = document.getElementById('evalScore');
+                const evaluation = data.evaluation;
+
+                let evalPercent;
+                let evalText;
+
+                if (typeof evaluation === 'string' && evaluation.includes('Mate')) {
+                    evalPercent = evaluation.includes('-') ? 0 : 100;
+                    evalText = evaluation;
+                } else {
+                    const score = Math.max(-10, Math.min(10, evaluation / 100));
+                    evalPercent = 50 + (score * 5);
+                    evalText = score > 0 ? `${score.toFixed(1)}` : score.toFixed(1).replace('-', '');
+                }
+                
+                evalScore.textContent = evalText;
+                evalScore.style.color = evalPercent >= 50 ? "black" : "white";
+            })
+            .catch(error => {
+                console.error("Fetch error:", error);
+                alert("Failed to load position. See console for details.");
+            });
         }
+        
+        function flipBoard() {
+            board.flip();
+        }
+
     </script>
+    <footer>
+        <a href="/settings"><img src="{{url_for('static', filename='settings.png')}}"></i></a>
+    </footer>
 </body>
 </html>

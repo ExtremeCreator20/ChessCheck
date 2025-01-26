@@ -3,8 +3,8 @@ import chess.pgn
 import chess.engine
 from io import StringIO
 
-def parse_pgn(pgn_string) -> list:
-    """Parses a PGN string and extracts moves and FEN positions."""
+def parse_pgn(pgn_string) -> tuple:
+    """Parses a PGN string and extracts moves, FEN positions, and player information."""
     pgn = chess.pgn.read_game(StringIO(pgn_string))
     if not pgn:
         raise ValueError("Invalid PGN string")
@@ -12,10 +12,16 @@ def parse_pgn(pgn_string) -> list:
     moves = []
     board = pgn.board()
     for move in pgn.mainline_moves():
-        moves.append((board.san(move), board.fen()))
+        mv = board.san(move)
         board.push(move)
+        moves.append((mv, board.fen()))
 
-    return moves
+    white_player = pgn.headers.get("White", "Unknown")
+    black_player = pgn.headers.get("Black", "Unknown")
+    white_title = pgn.headers.get("WhiteTitle", "")
+    black_title = pgn.headers.get("BlackTitle", "")
+
+    return moves, white_player, black_player, white_title, black_title
 
 def analyze_game(moves, engine) -> dict:
     """Analyzes moves using an engine and returns a dictionary with scores."""
@@ -51,5 +57,8 @@ def get_position_evaluation(fen, engine):
     board = chess.Board(fen)
     with chess.engine.SimpleEngine.popen_uci(engine) as engine:
         info = engine.analyse(board, chess.engine.Limit(depth=20))
-        evaluation = info["score"].white().score() if not info["score"].is_mate() else f"Mate in {info['score']}"
+        if info["score"].is_mate():
+            evaluation = f"Mate in {info['score'].white()}"
+        else:
+            evaluation = info["score"].white().score()
     return board.fen(), evaluation

@@ -31,10 +31,15 @@ This project is a web application built with Flask that analyzes chess games bas
 3. **Paste a PGN:**
    Use the provided form on the main page to paste a PGN for analysis.
 
+### Changing settings
+
+You can change them by going into `config.json` or using the web ui (cog icon).
+
 ## Contributing
 
 Contributions are welcome! Please open an issue or submit a pull request for any improvements or bug fixes.
 
 ## License
 
-This project is licensed under the MIT License. See the LICENSE file for details.
+This project is licensed under the GPL v3 License. See the LICENSE file for details.
+
