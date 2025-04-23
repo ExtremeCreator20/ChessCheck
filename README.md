@@ -7,8 +7,8 @@ This project is a web application built with Flask that analyzes chess games bas
 1. **Clone the repository:**
 
    ``` bash
-   git clone <repository-url>
-   cd chess-analysis-app
+   git clone https://github.com/ExtremeCreator20/ChessCheck.git
+   cd ChessCheck
    ```
 
 2. **Install the required packages:**
@@ -26,7 +26,7 @@ This project is a web application built with Flask that analyzes chess games bas
    ```
 
 2. **Access the application:**
-   Open your web browser and go to `http://127.0.0.1:<port>`.
+   Open your web browser and go to `http://<host>:<port>`.
 
 3. **Paste a PGN:**
    Use the provided form on the main page to paste a PGN for analysis.
