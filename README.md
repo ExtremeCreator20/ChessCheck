@@ -31,6 +31,10 @@ This project is a web application built with Flask that analyzes chess games bas
 3. **Paste a PGN:**
    Use the provided form on the main page to paste a PGN for analysis.
 
+### Support
+
+Currently only Windows x64, Linux x64 and macOS are supported. It might work on other OSs too.
+
 ### Changing settings
 
 You can change them by going into `config.json` or using the web ui (cog icon).

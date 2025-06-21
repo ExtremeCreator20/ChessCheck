@@ -1,7 +1,12 @@
+import os
+
+os.system("python -m pip install -r requirements.txt")
+
 from app.analysis import *
 from flask import *
-import json
+import json, requests, zipfile, tarfile
 from urllib.parse import unquote
+import platform as pf
 
 app = Flask(__name__, static_folder="app/static", template_folder="app/templates")
 
@@ -9,7 +14,50 @@ cfile = open("config.json", "r+")
 
 conf : dict = json.load(cfile)
 
-ENGINE = conf["engine-path"]
+
+def download_engine(ost="win"):
+    if ost == "win":
+        link = "https://github.com/official-stockfish/Stockfish/releases/latest/download/stockfish-windows-x86-64-avx2.zip"
+    elif ost == "linux":
+        link = "https://github.com/official-stockfish/Stockfish/releases/latest/download/stockfish-ubuntu-x86-64-avx2.tar"
+    elif ost == "mac":
+        link = "https://github.com/official-stockfish/Stockfish/releases/latest/download/stockfish-macos-m1-apple-silicon.tar"
+    else:
+        raise Exception("Unsupported platform: " + ost)
+    dest = os.path.join(os.path.dirname(os.path.abspath(__file__)), "stockfish." + ("zip" if ost == "win" else "tar"))
+
+    response = requests.get(link, stream=True)
+
+    response.raise_for_status()
+
+    with open(dest, 'wb') as file:
+        for chunk in response.iter_content(chunk_size=8192):  
+            file.write(chunk)
+    
+    return dest
+
+
+def get_engine():
+    pltf = pf.platform(terse=True)
+    if pltf.startswith("Linux"):
+        tarfile.TarFile(download_engine("linux"), 'r').extractall(os.path.join(os.path.dirname(os.path.abspath(__file__))))
+        os.replace(os.path.join(os.path.dirname(os.path.abspath(__file__)), "stockfish", "stockfish-ubuntu-x86-64-avx2"), os.path.join(os.path.dirname(os.path.abspath(__file__)), "stockfish-ubuntu-x86-64-avx2"))
+        return os.path.join(os.path.dirname(os.path.abspath(__file__)), "stockfish-ubuntu-x86-64-avx2")
+    
+    elif pltf.startswith("Windows"):
+        zipfile.ZipFile(download_engine("win"), 'r').extractall(os.path.join(os.path.dirname(os.path.abspath(__file__))))
+        os.replace(os.path.join(os.path.dirname(os.path.abspath(__file__)), "stockfish", "stockfish-windows-x86-64-avx2.exe"), os.path.join(os.path.dirname(os.path.abspath(__file__)), "stockfish-windows-x86-64-avx2.exe"))
+        return os.path.join(os.path.dirname(os.path.abspath(__file__)), "stockfish-windows-x86-64-avx2.exe")
+    
+    elif pltf.startswith("Darwin"):
+        tarfile.TarFile(download_engine("mac"), 'r').extractall(os.path.join(os.path.dirname(os.path.abspath(__file__))))
+        os.replace(os.path.join(os.path.dirname(os.path.abspath(__file__)), "stockfish", "stockfish-macos-m1-apple-silicon"), os.path.join(os.path.dirname(os.path.abspath(__file__)), "stockfish-macos-m1-apple-silicon"))
+        return os.path.join(os.path.dirname(os.path.abspath(__file__)), "stockfish-macos-m1-apple-silicon")
+
+    else:
+        raise Exception("Unsupported platform: " + pltf)
+
+ENGINE = get_engine()
 HOST = conf["host"]
 PORT = conf["port"]
 

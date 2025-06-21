@@ -1,5 +1,4 @@
 {
-    "engine-path": "E:\\Stockfish\\stockfish-v17.exe",
     "port": "5000",
     "host": "0.0.0.0"
 }
